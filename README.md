@@ -12,7 +12,7 @@ By the end of Week 5, a real user can complete the basic VIT SMART monitoring fl
 2. Basic muscle fatigue monitoring  
 3. Fatigue / overload warning feedback  
 
-## Team Focus for Week 4
+## Team Focus for Week 5
 This week, the team focused on:
 - assigning team roles
 - defining the sprint goal
