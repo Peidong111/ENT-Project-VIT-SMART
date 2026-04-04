@@ -21,8 +21,8 @@ This week, the team focused on:
 - setting up the Kanban board
 
 ## Links
-- **GitHub Projects Kanban:** [[Paste your GitHub Projects link here](https://github.com/users/Peidong111/projects/2/views/1 )]
-- **PRD:** [[Paste your PRD link here](https://xjtlums-my.sharepoint.com/:w:/g/personal/peidong_chen23_student_xjtlu_edu_cn/IQDJw-r29wOPSZYUVetT6oxQAeO6YrjjChAQSRv4-uwGy6I?e=bLxrZR)]
+- **GitHub Projects Kanban:** [(https://github.com/users/Peidong111/projects/2/views/1 )]
+- **PRD:** [(https://xjtlums-my.sharepoint.com/:w:/g/personal/peidong_chen23_student_xjtlu_edu_cn/IQDJw-r29wOPSZYUVetT6oxQAeO6YrjjChAQSRv4-uwGy6I?e=bLxrZR)]
 - **Development Log:** [(https://xjtlums-my.sharepoint.com/:w:/g/personal/peidong_chen23_student_xjtlu_edu_cn/IQAsn2XjtxxPSYmUzxf5bbBYATkuMFAGJoZSzE6dT1YaKhM?e=DhRAua)]
 
 ## Repository Notes
