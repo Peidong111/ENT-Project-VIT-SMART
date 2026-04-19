@@ -1,0 +1,21 @@
+{
+  "name": "simple-login-demo",
+  "version": "1.0.0",
+  "description": "Simple portal demo with secure auth and SQLite",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "NODE_ENV=development node server.js",
+    "test": "node --test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.8.0",
+    "express": "^5.2.1",
+    "serialport": "^13.0.0"
+  }
+}

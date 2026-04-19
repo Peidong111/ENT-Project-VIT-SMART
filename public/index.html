@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workspace Portal</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(96, 165, 250, 0.18), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.16), transparent 25%),
+        linear-gradient(135deg, #0f172a, #111827 55%, #1e293b);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 1120px;
+    }
+
+    .panel {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      overflow: hidden;
+      border-radius: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(15, 23, 42, 0.78);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(10px);
+    }
+
+    .hero {
+      padding: 56px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 18px;
+    }
+
+    .badge {
+      width: fit-content;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      background: rgba(59, 130, 246, 0.16);
+      border: 1px solid rgba(96, 165, 250, 0.24);
+      color: #bfdbfe;
+    }
+
+    .hero h1 {
+      font-size: 46px;
+      line-height: 1.08;
+    }
+
+    .hero p {
+      max-width: 480px;
+      color: #cbd5e1;
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    .hero-grid {
+      display: flex;
+      gap: 14px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .hero-item {
+      min-width: 160px;
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .hero-item strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 18px;
+    }
+
+    .hero-item span {
+      color: #94a3b8;
+      font-size: 13px;
+    }
+
+    .form-wrap {
+      padding: 28px;
+      background: rgba(255, 255, 255, 0.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 390px;
+      background: #ffffff;
+      color: #111827;
+      border-radius: 24px;
+      padding: 26px;
+      box-shadow: 0 18px 48px rgba(15, 23, 42, 0.22);
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+
+    .tab-btn {
+      height: 44px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 14px;
+      background: #e5e7eb;
+      color: #374151;
+      transition: 0.2s ease;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      color: #ffffff;
+    }
+
+    .section-title {
+      font-size: 26px;
+      margin-bottom: 8px;
+    }
+
+    .section-text {
+      color: #6b7280;
+      font-size: 14px;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    .form-panel {
+      display: none;
+    }
+
+    .form-panel.active {
+      display: block;
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #374151;
+    }
+
+    .field input {
+      width: 100%;
+      height: 46px;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      padding: 0 14px;
+      font-size: 14px;
+      outline: none;
+      transition: 0.2s ease;
+    }
+
+    .field input:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+    }
+
+    .action-btn {
+      width: 100%;
+      height: 48px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 15px;
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-1px);
+      opacity: 0.96;
+    }
+
+    .status {
+      min-height: 24px;
+      margin-top: 14px;
+      font-size: 14px;
+      color: #2563eb;
+    }
+
+    @media (max-width: 920px) {
+      .panel {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        padding: 36px 28px 14px;
+      }
+
+      .hero h1 {
+        font-size: 36px;
+      }
+
+      .form-wrap {
+        padding: 14px 20px 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="panel">
+      <section class="hero">
+        <div class="badge">Workspace Entry</div>
+        <h1>Simple Access Portal</h1>
+        <p>
+          A minimal front-end and back-end demo with user registration, user login,
+          and a redirect to the main page after a successful sign in.
+        </p>
+
+        <div class="hero-grid">
+          <div class="hero-item">
+            <strong>Register</strong>
+            <span>Create a user record in SQLite</span>
+          </div>
+          <div class="hero-item">
+            <strong>Login</strong>
+            <span>Check email and password</span>
+          </div>
+          <div class="hero-item">
+            <strong>Redirect</strong>
+            <span>Open the main dashboard page</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="form-wrap">
+        <div class="card">
+          <div class="tabs">
+            <button id="registerTab" class="tab-btn active" type="button">Register</button>
+            <button id="loginTab" class="tab-btn" type="button">Login</button>
+          </div>
+
+          <div id="registerPanel" class="form-panel active">
+            <h2 class="section-title">Create Account</h2>
+            <p class="section-text">Register with your email and password.</p>
+
+            <form id="registerForm">
+              <div class="field">
+                <label for="registerEmail">Email</label>
+                <input id="registerEmail" type="email" placeholder="name@company.com" autocomplete="email" required />
+              </div>
+
+              <div class="field">
+                <label for="registerPassword">Password</label>
+                <input id="registerPassword" type="password" placeholder="Create a password (min 8 chars)" minlength="8" autocomplete="new-password" required />
+              </div>
+
+              <button class="action-btn" type="submit">Register</button>
+            </form>
+          </div>
+
+          <div id="loginPanel" class="form-panel">
+            <h2 class="section-title">Welcome Back</h2>
+            <p class="section-text">Sign in to continue to the main page.</p>
+
+            <form id="loginForm">
+              <div class="field">
+                <label for="loginEmail">Email</label>
+                <input id="loginEmail" type="email" placeholder="name@company.com" autocomplete="email" required />
+              </div>
+
+              <div class="field">
+                <label for="loginPassword">Password</label>
+                <input id="loginPassword" type="password" placeholder="Enter your password" autocomplete="current-password" required />
+              </div>
+
+              <button class="action-btn" type="submit">Sign In</button>
+            </form>
+          </div>
+
+          <div class="status" id="status"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const registerTab = document.getElementById("registerTab");
+    const loginTab = document.getElementById("loginTab");
+    const registerPanel = document.getElementById("registerPanel");
+    const loginPanel = document.getElementById("loginPanel");
+    const statusBox = document.getElementById("status");
+    const registerForm = document.getElementById("registerForm");
+    const loginForm = document.getElementById("loginForm");
+
+    function showRegister() {
+      registerTab.classList.add("active");
+      loginTab.classList.remove("active");
+      registerPanel.classList.add("active");
+      loginPanel.classList.remove("active");
+      statusBox.textContent = "";
+    }
+
+    function showLogin() {
+      loginTab.classList.add("active");
+      registerTab.classList.remove("active");
+      loginPanel.classList.add("active");
+      registerPanel.classList.remove("active");
+      statusBox.textContent = "";
+    }
+
+    registerTab.addEventListener("click", showRegister);
+    loginTab.addEventListener("click", showLogin);
+
+    registerForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const email = document.getElementById("registerEmail").value.trim();
+      const password = document.getElementById("registerPassword").value.trim();
+
+      if (!email || !password) {
+        statusBox.textContent = "Please fill in both register fields.";
+        return;
+      }
+
+      if (password.length < 8) {
+        statusBox.textContent = "Password must be at least 8 characters.";
+        return;
+      }
+
+      try {
+        const response = await fetch("/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ email, password })
+        });
+
+        const result = await response.json();
+        statusBox.textContent = result.message;
+
+        if (result.success) {
+          registerForm.reset();
+          showLogin();
+          document.getElementById("loginEmail").value = email;
+        }
+      } catch (error) {
+        statusBox.textContent = "Register request failed.";
+      }
+    });
+
+    loginForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value.trim();
+
+      if (!email || !password) {
+        statusBox.textContent = "Please fill in both login fields.";
+        return;
+      }
+
+      try {
+        const response = await fetch("/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ email, password })
+        });
+
+        const result = await response.json();
+        statusBox.textContent = result.message;
+
+        if (result.success) {
+          window.location.href = `/dashboard.html?email=${encodeURIComponent(result.email)}`;
+        }
+      } catch (error) {
+        statusBox.textContent = "Login request failed.";
+      }
+    });
+  </script>
+</body>
+</html>
