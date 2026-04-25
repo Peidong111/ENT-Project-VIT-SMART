@@ -406,6 +406,31 @@
       margin-bottom: 16px;
     }
 
+    .emg-wave-wrap {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #f8fafc, #eef2ff);
+      padding: 8px;
+      margin-bottom: 12px;
+    }
+
+    .emg-wave-canvas {
+      display: block;
+      width: 100%;
+      height: 150px;
+      border-radius: 8px;
+      background: #0f172a;
+    }
+
+    .emg-wave-meta {
+      margin-top: 8px;
+      color: #64748b;
+      font-size: 12px;
+      font-family: Menlo, Consolas, monospace;
+      text-align: right;
+      min-height: 14px;
+    }
+
     .emg-state {
       flex: 1;
       padding: 12px 8px;
@@ -479,12 +504,15 @@
         <span class="pose-hint">Real-time Sensor Monitoring</span>
       </div>
       
-      <div class="emg-value" id="emgRawValue">RAW: 0000</div>
-      
       <div class="emg-states">
         <div class="emg-state active-normal" id="stateNormal">Normal</div>
         <div class="emg-state" id="stateHigh">High Load</div>
         <div class="emg-state" id="stateFatigue">Fatigue Risk</div>
+      </div>
+
+      <div class="emg-wave-wrap">
+        <canvas class="emg-wave-canvas" id="emgWaveCanvas"></canvas>
+        <div class="emg-wave-meta" id="emgWaveMeta">CH1 waveform: waiting for data...</div>
       </div>
       
       <div class="alert-bar" id="emgAlertBar">Awaiting serial data...</div>
@@ -570,6 +598,13 @@
     const serialSendBtn = document.getElementById("serialSendBtn");
     const serialStatus = document.getElementById("serialStatus");
     const serialLog = document.getElementById("serialLog");
+    const stateNormal = document.getElementById("stateNormal");
+    const stateHigh = document.getElementById("stateHigh");
+    const stateFatigue = document.getElementById("stateFatigue");
+    const emgAlertBar = document.getElementById("emgAlertBar");
+    const emgWaveCanvas = document.getElementById("emgWaveCanvas");
+    const emgWaveMeta = document.getElementById("emgWaveMeta");
+    const emgWaveCtx = emgWaveCanvas ? emgWaveCanvas.getContext("2d") : null;
     const poseCtx = poseCanvas.getContext("2d");
 
     let poseLandmarker;
@@ -596,6 +631,20 @@
     let serialConnected = false;
     let serialPollTimer = null;
     let serialLastLogId = 0;
+    let latestCh1Raw = "N/A";
+    const emgWaveSamples = [];
+    const EMG_WAVE_MAX_POINTS = 260;
+    const EMG_WAVE_FILTER_ALPHA = 0.22;
+    const EMG_WAVE_MAX_STEP = 240;
+    const EMG_WAVE_SCROLL_FPS = 45;
+    const EMG_WAVE_SCROLL_INTERVAL_MS = 1000 / EMG_WAVE_SCROLL_FPS;
+    const EMG_WAVE_INTERP_ALPHA = 0.18;
+    let emgWaveFilteredValue = null;
+    let emgWaveAnimatedValue = null;
+    let emgWaveTargetValue = null;
+    let emgWaveLastFrameTs = 0;
+    let emgWaveScrollAccumulator = 0;
+    let emgWaveRafId = 0;
 
     function appendMessage(role, text) {
       const node = document.createElement("div");
@@ -623,29 +672,32 @@
       // =========================================================
       // 🌟 新增核心功能：实时抓取页面上的 EMG 状态并注入 Context 🌟
       // =========================================================
-      const emgRawNode = document.getElementById("emgRawValue");
       const stateNormalNode = document.getElementById("stateNormal");
       const stateHighNode = document.getElementById("stateHigh");
       const stateFatigueNode = document.getElementById("stateFatigue");
 
-      let currentEmgRaw = emgRawNode ? emgRawNode.textContent : "未知";
-      let currentState = "未知";
+      const currentEmgRaw = latestCh1Raw;
+      let currentState = "Unknown";
 
       // 通过判断哪个 HTML 元素拥有 active 类名，来确定当前的肌肉疲劳状态
       if (stateNormalNode && stateNormalNode.classList.contains("active-normal")) {
-        currentState = "Normal (肌肉状态正常，无疲劳)";
+        currentState = "Normal (muscle status is stable, no fatigue risk)";
       } else if (stateHighNode && stateHighNode.classList.contains("active-high")) {
-        currentState = "High Load (肌肉处于高负载区间)";
+        currentState = "High Load (muscle is under elevated load)";
       } else if (stateFatigueNode && stateFatigueNode.classList.contains("active-fatigue")) {
-        currentState = "Fatigue Risk (危险！肌肉已进入极度疲劳风险区)";
+        currentState = "Fatigue Risk (high fatigue risk detected)";
       }
 
       // 构造给大模型的“悄悄话”（系统级 Prompt）
-      const emgContext = `【系统级强制指令】你现在是一名专业的实体健身教练，正在看着我训练。我的实时肌电(EMG)数值为: ${currentEmgRaw}，当前的肌肉生理状态评估为: ${currentState}。
-请严格遵守以下规则：
-1. 直接基于当前数值和状态给出极简的训练或休息建议（例如：“数值偏高，立刻休息！”）。
-2. 绝对不要说“我无法访问设备”、“这是系统注入的数据”或“模拟快照”等任何暴露你 AI 身份或数据来源的废话。
-3. 必须完全代入教练角色，直接对我说话。`;
+      const emgContext = `[SYSTEM INSTRUCTION] You are a professional in-person fitness coach watching me train live.
+My real-time EMG value is: ${currentEmgRaw}
+Current muscle physiological status: ${currentState}
+
+Strict rules:
+1. Give short, direct training/rest advice based only on the current EMG value and status.
+2. Do not mention limitations like "I cannot access devices", "this is injected data", or "simulated snapshot".
+3. Stay fully in coach role and speak directly to me.
+4. You must reply in English only.`;
 
       try {
         // 将历史的姿态分析(如有)与实时的肌电数据合并
@@ -854,47 +906,212 @@
       serialLog.scrollTop = serialLog.scrollHeight;
     }
 
-    // --- 新增：EMG 数据解析与 UI 更新逻辑 ---
+    function extractChannel1Value(text) {
+      const raw = String(text || "").trim();
+      if (!raw) {
+        return null;
+      }
+
+      const csvMatch = raw.match(/-?\d+(?:\.\d+)?(?:\s*,\s*-?\d+(?:\.\d+)?)+/);
+      if (csvMatch) {
+        const values = csvMatch[0]
+          .split(",")
+          .map((item) => Number(item.trim()))
+          .filter((item) => Number.isFinite(item));
+        if (values.length >= 2) {
+          return values[0];
+        }
+      }
+
+      const labeledMatch = raw.match(/(?:ch1|channel\s*1)\s*[:=]\s*(-?\d+(?:\.\d+)?)/i);
+      if (labeledMatch) {
+        const value = Number(labeledMatch[1]);
+        return Number.isFinite(value) ? value : null;
+      }
+
+      const firstNumber = raw.match(/-?\d+(?:\.\d+)?/);
+      if (!firstNumber) {
+        return null;
+      }
+      const value = Number(firstNumber[0]);
+      return Number.isFinite(value) ? value : null;
+    }
+
+    function ensureEmgWaveCanvasSize() {
+      if (!emgWaveCanvas || !emgWaveCtx) {
+        return;
+      }
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(300, Math.floor(emgWaveCanvas.clientWidth * dpr));
+      const height = Math.max(120, Math.floor(emgWaveCanvas.clientHeight * dpr));
+      if (emgWaveCanvas.width !== width || emgWaveCanvas.height !== height) {
+        emgWaveCanvas.width = width;
+        emgWaveCanvas.height = height;
+      }
+    }
+
+    function renderEmgWaveform() {
+      if (!emgWaveCanvas || !emgWaveCtx) {
+        return;
+      }
+
+      ensureEmgWaveCanvasSize();
+      const { width, height } = emgWaveCanvas;
+      emgWaveCtx.clearRect(0, 0, width, height);
+
+      emgWaveCtx.fillStyle = "#0f172a";
+      emgWaveCtx.fillRect(0, 0, width, height);
+
+      emgWaveCtx.strokeStyle = "rgba(148, 163, 184, 0.25)";
+      emgWaveCtx.lineWidth = 1;
+      for (let i = 1; i <= 4; i += 1) {
+        const y = (height / 5) * i;
+        emgWaveCtx.beginPath();
+        emgWaveCtx.moveTo(0, y);
+        emgWaveCtx.lineTo(width, y);
+        emgWaveCtx.stroke();
+      }
+
+      if (!emgWaveSamples.length) {
+        return;
+      }
+
+      const min = Math.min(...emgWaveSamples);
+      const max = Math.max(...emgWaveSamples);
+      const hasSpan = max > min;
+      const span = hasSpan ? max - min : 1;
+      const leftPad = 6;
+      const rightPad = 6;
+      const topPad = 8;
+      const bottomPad = 8;
+      const usableWidth = Math.max(1, width - leftPad - rightPad);
+      const usableHeight = Math.max(1, height - topPad - bottomPad);
+      const n = emgWaveSamples.length;
+      const points = [];
+      for (let i = 0; i < n; i += 1) {
+        const value = emgWaveSamples[i];
+        const x = leftPad + (n === 1 ? 0 : (i / (n - 1)) * usableWidth);
+        const normalized = hasSpan ? (value - min) / span : 0.5;
+        const y = topPad + (1 - normalized) * usableHeight;
+        points.push({ x, y });
+      }
+
+      emgWaveCtx.strokeStyle = "#22d3ee";
+      emgWaveCtx.lineWidth = 2;
+      emgWaveCtx.lineJoin = "round";
+      emgWaveCtx.lineCap = "round";
+      emgWaveCtx.shadowColor = "rgba(34, 211, 238, 0.35)";
+      emgWaveCtx.shadowBlur = 8;
+      emgWaveCtx.beginPath();
+      if (points.length === 1) {
+        emgWaveCtx.moveTo(points[0].x, points[0].y);
+        emgWaveCtx.lineTo(points[0].x + 0.01, points[0].y);
+      } else if (points.length === 2) {
+        emgWaveCtx.moveTo(points[0].x, points[0].y);
+        emgWaveCtx.lineTo(points[1].x, points[1].y);
+      } else {
+        emgWaveCtx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length - 1; i += 1) {
+          const xc = (points[i].x + points[i + 1].x) / 2;
+          const yc = (points[i].y + points[i + 1].y) / 2;
+          emgWaveCtx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+        }
+        const last = points[points.length - 1];
+        emgWaveCtx.lineTo(last.x, last.y);
+      }
+      emgWaveCtx.stroke();
+      emgWaveCtx.shadowBlur = 0;
+
+      if (emgWaveMeta) {
+        emgWaveMeta.textContent = `CH1 min=${Math.round(min)} max=${Math.round(max)} samples=${n}`;
+      }
+    }
+
+    function pushAnimatedWavePoint(value) {
+      emgWaveSamples.push(value);
+      if (emgWaveSamples.length > EMG_WAVE_MAX_POINTS) {
+        emgWaveSamples.splice(0, emgWaveSamples.length - EMG_WAVE_MAX_POINTS);
+      }
+      renderEmgWaveform();
+    }
+
+    function animateEmgWave(tsMs) {
+      if (!emgWaveLastFrameTs) {
+        emgWaveLastFrameTs = tsMs;
+      }
+      const deltaMs = tsMs - emgWaveLastFrameTs;
+      emgWaveLastFrameTs = tsMs;
+      emgWaveScrollAccumulator += Math.max(0, deltaMs);
+
+      while (emgWaveScrollAccumulator >= EMG_WAVE_SCROLL_INTERVAL_MS) {
+        if (Number.isFinite(emgWaveTargetValue)) {
+          if (!Number.isFinite(emgWaveAnimatedValue)) {
+            emgWaveAnimatedValue = emgWaveTargetValue;
+          } else {
+            emgWaveAnimatedValue += (emgWaveTargetValue - emgWaveAnimatedValue) * EMG_WAVE_INTERP_ALPHA;
+          }
+          pushAnimatedWavePoint(emgWaveAnimatedValue);
+        }
+        emgWaveScrollAccumulator -= EMG_WAVE_SCROLL_INTERVAL_MS;
+      }
+
+      emgWaveRafId = window.requestAnimationFrame(animateEmgWave);
+    }
+
+    function pushChannel1Sample(value) {
+      if (!Number.isFinite(value)) {
+        return;
+      }
+
+      if (emgWaveFilteredValue === null) {
+        emgWaveFilteredValue = value;
+      } else {
+        const delta = value - emgWaveFilteredValue;
+        const clampedDelta = Math.max(-EMG_WAVE_MAX_STEP, Math.min(EMG_WAVE_MAX_STEP, delta));
+        emgWaveFilteredValue += clampedDelta * EMG_WAVE_FILTER_ALPHA;
+      }
+
+      emgWaveTargetValue = emgWaveFilteredValue;
+
+      if (!Number.isFinite(emgWaveAnimatedValue)) {
+        emgWaveAnimatedValue = emgWaveTargetValue;
+        for (let i = 0; i < 4; i += 1) {
+          pushAnimatedWavePoint(emgWaveAnimatedValue);
+        }
+      }
+    }
+
+    // EMG data parsing + UI refresh (channel1 waveform + fatigue status)
     function updateEMGDisplay(text) {
-      // 适配发现的数据格式：22,6,6,5,4,31,18
-      const parts = text.trim().split(',');
-      
-      // 确保收到的确实是包含至少 6 个通道的数据行
-      if (parts.length >= 6) {
-        const val = parseInt(parts[0]); // 取第 1 个通道的数据作为监测对象
-        if (isNaN(val)) return;
+      const val = extractChannel1Value(text);
+      if (!Number.isFinite(val)) {
+        return;
+      }
 
-        // 1. 更新卡片上的 RAW 数字显示
-        const rawDisplay = document.getElementById("emgRawValue");
-        if (rawDisplay) {
-          rawDisplay.textContent = `CH1 RAW: ${val.toString().padStart(4, '0')}`;
-        }
+      latestCh1Raw = String(Math.round(val));
 
-        // 2. 获取状态指示灯和警报条
-        const sNormal = document.getElementById("stateNormal");
-        const sHigh = document.getElementById("stateHigh");
-        const sFatigue = document.getElementById("stateFatigue");
-        const emgAlert = document.getElementById("emgAlertBar");
+      pushChannel1Sample(val);
 
-        if (!sNormal || !sHigh || !sFatigue || !emgAlert) return;
+      if (!stateNormal || !stateHigh || !stateFatigue || !emgAlertBar) {
+        return;
+      }
 
-        // 3. 重置所有指示灯状态
-        [sNormal, sHigh, sFatigue].forEach(el => el.className = "emg-state");
+      [stateNormal, stateHigh, stateFatigue].forEach((el) => {
+        el.className = "emg-state";
+      });
 
-        // 4. 疲劳判定逻辑（基于观察到的数值，你可以根据实际发力情况调整阈值）
-        if (val < 100) {
-          sNormal.className = "emg-state active-normal";
-          emgAlert.textContent = "Muscle relaxed / Normal condition.";
-          emgAlert.className = "alert-bar";
-        } else if (val < 350) {
-          sHigh.className = "emg-state active-high";
-          emgAlert.textContent = "High load detected. Monitoring...";
-          emgAlert.className = "alert-bar warn";
-        } else {
-          sFatigue.className = "emg-state active-fatigue";
-          emgAlert.textContent = "FATIGUE RISK! Recommend resting.";
-          emgAlert.className = "alert-bar high";
-        }
+      if (val < 100) {
+        stateNormal.className = "emg-state active-normal";
+        emgAlertBar.textContent = "Muscle relaxed / Normal condition.";
+        emgAlertBar.className = "alert-bar";
+      } else if (val < 350) {
+        stateHigh.className = "emg-state active-high";
+        emgAlertBar.textContent = "High load detected. Monitoring...";
+        emgAlertBar.className = "alert-bar warn";
+      } else {
+        stateFatigue.className = "emg-state active-fatigue";
+        emgAlertBar.textContent = "FATIGUE RISK! Recommend resting.";
+        emgAlertBar.className = "alert-bar high";
       }
     }
 
@@ -958,7 +1175,9 @@
         if (fresh.length) {
           serialLastLogId = Number(fresh[fresh.length - 1].id) || serialLastLogId;
           appendSerialLogLines(fresh);
-	      fresh.forEach(item => updateEMGDisplay(item.text));
+          fresh
+            .filter((item) => item.direction === "in")
+            .forEach((item) => updateEMGDisplay(item.text));
         }
       } catch (_error) {
         // ignore
@@ -1481,6 +1700,16 @@
       stopCamera();
     });
     initPoseModel();
+    renderEmgWaveform();
+    emgWaveRafId = window.requestAnimationFrame(animateEmgWave);
+    window.addEventListener("resize", () => {
+      renderEmgWaveform();
+    });
+    window.addEventListener("beforeunload", () => {
+      if (emgWaveRafId) {
+        window.cancelAnimationFrame(emgWaveRafId);
+      }
+    });
     renderRiskState();
     refreshSerialPorts();
     updateSerialStatus();
