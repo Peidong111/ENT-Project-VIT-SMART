@@ -697,6 +697,8 @@
     let emgIsInitializing = true;
     let emgWarmupUntilMs = 0;
     let emgLastMeasuredValue = null;
+    let emgStateLocked = false;
+    let emgLockedValue = null;
 
     function appendMessage(role, text) {
       const node = document.createElement("div");
@@ -716,10 +718,21 @@
       });
     }
 
+    function setEmgIdleVisual() {
+      if (!stateNormal || !stateHigh || !stateFatigue) {
+        return;
+      }
+      [stateNormal, stateHigh, stateFatigue].forEach((el) => {
+        el.className = "emg-state";
+      });
+    }
+
     function beginEmgWarmup() {
       emgIsInitializing = true;
       emgWarmupUntilMs = Date.now() + EMG_WARMUP_MS;
       emgLastMeasuredValue = null;
+      emgStateLocked = false;
+      emgLockedValue = null;
       latestCh1Raw = "N/A";
       setEmgInitializingVisual();
       if (emgAlertBar) {
@@ -728,6 +741,28 @@
       }
       if (emgDetectHint) {
         emgDetectHint.textContent = "Detecting (5s)";
+      }
+    }
+
+    function lockEmgResult(value) {
+      emgStateLocked = true;
+      emgLockedValue = Number.isFinite(value) ? value : null;
+
+      if (Number.isFinite(emgLockedValue)) {
+        applyEmgFatigueState(emgLockedValue);
+        if (emgDetectHint) {
+          emgDetectHint.textContent = "Result locked. Press Reset Detection to analyze again.";
+        }
+        return;
+      }
+
+      setEmgIdleVisual();
+      if (emgAlertBar) {
+        emgAlertBar.className = "alert-bar warn";
+        emgAlertBar.textContent = "No EMG sample captured in this 5s window. Press Reset Detection to retry.";
+      }
+      if (emgDetectHint) {
+        emgDetectHint.textContent = "No result. Press Reset Detection to retry.";
       }
     }
 
@@ -748,12 +783,9 @@
 
       emgIsInitializing = false;
       if (emgDetectHint) {
-        emgDetectHint.textContent = "Detection complete, continuous monitoring active";
+        emgDetectHint.textContent = "Detection complete, locking result...";
       }
-      if (!Number.isFinite(emgLastMeasuredValue) && emgAlertBar) {
-        emgAlertBar.className = "alert-bar";
-        emgAlertBar.textContent = "Initialization complete, waiting for EMG input data...";
-      }
+      lockEmgResult(emgLastMeasuredValue);
       return true;
     }
 
@@ -1184,8 +1216,8 @@ Strict rules:
       }
 
       const warmupFinished = syncEmgWarmupState();
-      if (warmupFinished && Number.isFinite(emgLastMeasuredValue)) {
-        applyEmgFatigueState(emgLastMeasuredValue);
+      if (warmupFinished) {
+        // State is now locked by syncEmgWarmupState().
       }
 
       emgWaveRafId = window.requestAnimationFrame(animateEmgWave);
@@ -1222,12 +1254,18 @@ Strict rules:
       }
 
       latestCh1Raw = String(Math.round(val));
-      emgLastMeasuredValue = val;
-
       pushChannel1Sample(val);
+
+      if (emgIsInitializing) {
+        emgLastMeasuredValue = val;
+      }
 
       const warmupFinished = syncEmgWarmupState();
       if (emgIsInitializing && !warmupFinished) {
+        return;
+      }
+
+      if (emgStateLocked) {
         return;
       }
 

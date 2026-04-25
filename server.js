@@ -546,14 +546,16 @@ function createApp(options = {}) {
 
     const baseStructured = summary.llmSummary || buildSessionSummaryForLlm(summary);
     const prompt = [
-      "你是运动动作分析助手。请仅基于以下结构化JSON给出简明分析。",
-      "输出格式要求：",
-      "1) overall_quality: 一句话",
-      "2) key_observations: 3条以内",
-      "3) next_actions: 3条以内",
-      "4) confidence_note: 说明数据质量（尤其fullBodyRate）",
+      "You are a movement quality analysis assistant.",
+      "Use only the structured JSON below and provide a concise analysis.",
+      "You must reply in English only.",
+      "Output format requirements:",
+      "1) overall_quality: one sentence",
+      "2) key_observations: up to 3 bullet points",
+      "3) next_actions: up to 3 bullet points",
+      "4) confidence_note: explain data quality (especially fullBodyRate)",
       "",
-      "结构化数据如下：",
+      "Structured data:",
       JSON.stringify(baseStructured)
     ].join("\n");
 
