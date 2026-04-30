@@ -823,11 +823,11 @@
         el.className = "emg-state";
       });
 
-      if (val < 100) {
+      if (val < 350) {
         stateNormal.className = "emg-state active-normal";
         emgAlertBar.textContent = "Muscle relaxed / Normal condition.";
         emgAlertBar.className = "alert-bar";
-      } else if (val < 350) {
+      } else if (val < 1500) {
         stateHigh.className = "emg-state active-high";
         emgAlertBar.textContent = "High load detected. Monitoring...";
         emgAlertBar.className = "alert-bar warn";
