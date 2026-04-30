@@ -192,6 +192,7 @@
       display: flex;
       gap: 8px;
       margin-bottom: 12px;
+      flex-wrap: wrap;
     }
 
     .pose-btn {
@@ -210,6 +211,10 @@
 
     .pose-btn.tertiary {
       background: linear-gradient(135deg, #0f766e, #0ea5e9);
+    }
+
+    .pose-file-input {
+      display: none;
     }
 
     .pose-stage {
@@ -571,6 +576,8 @@
 
       <div class="pose-controls">
         <button class="pose-btn" id="poseStartBtn" type="button">Start Camera</button>
+        <button class="pose-btn tertiary" id="poseUploadBtn" type="button">Upload Video</button>
+        <input class="pose-file-input" id="poseVideoFileInput" type="file" accept="video/*" />
         <button class="pose-btn secondary" id="poseStopBtn" type="button">Stop</button>
         <button class="pose-btn tertiary" id="poseAnalyzeBtn" type="button">Analyze Latest Session</button>
       </div>
@@ -629,6 +636,8 @@
     const sendBtn = document.getElementById("sendBtn");
     const chatHint = document.getElementById("chatHint");
     const poseStartBtn = document.getElementById("poseStartBtn");
+    const poseUploadBtn = document.getElementById("poseUploadBtn");
+    const poseVideoFileInput = document.getElementById("poseVideoFileInput");
     const poseStopBtn = document.getElementById("poseStopBtn");
     const poseAnalyzeBtn = document.getElementById("poseAnalyzeBtn");
     const poseVideo = document.getElementById("poseVideo");
@@ -656,7 +665,9 @@
     const poseCtx = poseCanvas.getContext("2d");
 
     let poseLandmarker;
-    let webcamRunning = false;
+    let poseRunning = false;
+    let poseSourceMode = "idle";
+    let localVideoObjectUrl = null;
     let lastVideoTime = -1;
     let drawingUtils;
     let poseSessionId = null;
@@ -1341,16 +1352,19 @@ Strict rules:
       }
     }
 
-    async function createPoseSessionOnServer() {
+    async function createPoseSessionOnServer(options = {}) {
       const response = await fetch("/api/pose/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userEmail: email,
           exercise: "general",
-          cameraMode: "front",
-          device: "web-dashboard",
-          meta: { source: "mediapipe_pose_landmarker" }
+          cameraMode: options.cameraMode || "front",
+          device: options.device || "web-dashboard",
+          meta: {
+            source: "mediapipe_pose_landmarker",
+            ...(options.meta || {})
+          }
         })
       });
       const result = await response.json().catch(() => ({}));
@@ -1358,6 +1372,27 @@ Strict rules:
         throw new Error(result.message || "create session failed");
       }
       return result.session.id;
+    }
+
+    function resetPoseRuntimeState() {
+      poseSessionStartedAtMs = Date.now();
+      poseFrameBuffer = [];
+      poseActionBuffer = [];
+      poseEventBuffer = [];
+      lastEventAtMs.clear();
+      recentRiskEvents = [];
+      renderRiskState();
+      lastTrackingStatus = "TRACKING";
+      previousAngles = null;
+      previousAnglesTsMs = 0;
+      lastVideoTime = -1;
+    }
+
+    function releaseLocalVideoUrl() {
+      if (localVideoObjectUrl) {
+        URL.revokeObjectURL(localVideoObjectUrl);
+        localVideoObjectUrl = null;
+      }
     }
 
     async function flushPoseBuffers(force = false) {
@@ -1623,8 +1658,10 @@ Strict rules:
       previousAnglesTsMs = tsMs;
     }
 
-    async function stopCamera() {
-      webcamRunning = false;
+    async function stopPoseCapture(statusMessage = "Pose capture stopped.") {
+      const wasRunning = poseRunning;
+      poseRunning = false;
+      poseSourceMode = "idle";
       if (reportTimer) {
         clearInterval(reportTimer);
         reportTimer = null;
@@ -1634,6 +1671,12 @@ Strict rules:
         stream.getTracks().forEach((track) => track.stop());
       }
       poseVideo.srcObject = null;
+      poseVideo.pause();
+      if (poseVideo.src) {
+        poseVideo.removeAttribute("src");
+        poseVideo.load();
+      }
+      releaseLocalVideoUrl();
       poseCtx.clearRect(0, 0, poseCanvas.width, poseCanvas.height);
       await flushPoseBuffers(true);
       if (poseSessionId) {
@@ -1648,15 +1691,17 @@ Strict rules:
         }
       }
       poseSessionId = null;
+      poseFrameBuffer = [];
       poseActionBuffer = [];
+      poseEventBuffer = [];
       recentRiskEvents = [];
       renderRiskState();
-      poseStatus.textContent = "Camera stopped.";
+      poseStatus.textContent = wasRunning ? statusMessage : "No active pose capture.";
     }
 
     async function startCamera() {
-      if (webcamRunning) {
-        poseStatus.textContent = "Camera already running.";
+      if (poseRunning) {
+        poseStatus.textContent = "Pose capture already running.";
         return;
       }
       if (!poseLandmarker) {
@@ -1664,28 +1709,26 @@ Strict rules:
         return;
       }
       try {
+        releaseLocalVideoUrl();
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         poseVideo.srcObject = stream;
+        poseVideo.muted = true;
         await poseVideo.play();
 
-        poseSessionStartedAtMs = Date.now();
-        poseFrameBuffer = [];
-        poseActionBuffer = [];
-        poseEventBuffer = [];
-        lastEventAtMs.clear();
-        recentRiskEvents = [];
-        renderRiskState();
-        lastTrackingStatus = "TRACKING";
-        previousAngles = null;
-        previousAnglesTsMs = 0;
+        resetPoseRuntimeState();
+        poseSourceMode = "camera";
 
         try {
-          poseSessionId = await createPoseSessionOnServer();
+          poseSessionId = await createPoseSessionOnServer({
+            cameraMode: "front",
+            device: "web-dashboard",
+            meta: { input: "camera" }
+          });
         } catch (_error) {
           poseSessionId = null;
         }
 
-        webcamRunning = true;
+        poseRunning = true;
         reportTimer = window.setInterval(() => {
           flushPoseBuffers(false);
         }, 1500);
@@ -1699,8 +1742,65 @@ Strict rules:
       }
     }
 
+    async function startLocalVideo(file) {
+      if (!file) {
+        return;
+      }
+      if (!poseLandmarker) {
+        poseStatus.textContent = "Pose model is not ready.";
+        return;
+      }
+
+      if (poseRunning) {
+        await stopPoseCapture("Previous pose capture stopped.");
+      }
+
+      try {
+        releaseLocalVideoUrl();
+        localVideoObjectUrl = URL.createObjectURL(file);
+        poseVideo.srcObject = null;
+        poseVideo.src = localVideoObjectUrl;
+        poseVideo.muted = true;
+        poseVideo.loop = false;
+        await poseVideo.play();
+
+        resetPoseRuntimeState();
+        poseSourceMode = "local-video";
+
+        try {
+          poseSessionId = await createPoseSessionOnServer({
+            cameraMode: "local-video",
+            device: "local-video-upload",
+            meta: {
+              input: "local-video",
+              fileName: file.name,
+              fileSize: file.size,
+              fileType: file.type || "video"
+            }
+          });
+        } catch (_error) {
+          poseSessionId = null;
+        }
+
+        poseRunning = true;
+        reportTimer = window.setInterval(() => {
+          flushPoseBuffers(false);
+        }, 1500);
+        poseStatus.textContent = poseSessionId
+          ? `Analyzing uploaded video... session ${poseSessionId.slice(0, 8)}`
+          : "Analyzing uploaded video... local only (session API unavailable)";
+        window.requestAnimationFrame(predictPose);
+      } catch (_error) {
+        poseSessionId = null;
+        releaseLocalVideoUrl();
+        poseStatus.textContent = "Unable to load selected video.";
+      } finally {
+        poseVideoFileInput.value = "";
+      }
+    }
+
     function predictPose() {
-      if (!webcamRunning) {
+      if (!poseRunning) {
         return;
       }
 
@@ -1713,7 +1813,9 @@ Strict rules:
 
       if (poseVideo.currentTime !== lastVideoTime) {
         lastVideoTime = poseVideo.currentTime;
-        const tsMs = Math.max(0, Date.now() - poseSessionStartedAtMs);
+        const tsMs = poseSourceMode === "local-video"
+          ? Math.max(0, poseVideo.currentTime * 1000)
+          : Math.max(0, Date.now() - poseSessionStartedAtMs);
         const result = poseLandmarker.detectForVideo(poseVideo, performance.now());
 
         poseCtx.save();
@@ -1732,7 +1834,9 @@ Strict rules:
             });
           }
           analyzePose(result.landmarks[0], tsMs);
-          poseStatus.textContent = `Tracking pose (${lastTrackingStatus})`;
+          poseStatus.textContent = poseSourceMode === "local-video"
+            ? `Analyzing video pose (${lastTrackingStatus})`
+            : `Tracking pose (${lastTrackingStatus})`;
         } else {
           markTrackingStatus("NO_POSE", tsMs, null, {});
           emitRiskEvent({
@@ -1743,7 +1847,9 @@ Strict rules:
             metrics: {},
             cue: "Move your full body into the camera frame."
           });
-          poseStatus.textContent = "No pose detected.";
+          poseStatus.textContent = poseSourceMode === "local-video"
+            ? "No pose detected in video frame."
+            : "No pose detected.";
         }
         poseCtx.restore();
       }
@@ -1754,8 +1860,20 @@ Strict rules:
     poseStartBtn.addEventListener("click", () => {
       startCamera();
     });
+    poseUploadBtn.addEventListener("click", () => {
+      poseVideoFileInput.click();
+    });
+    poseVideoFileInput.addEventListener("change", () => {
+      const file = poseVideoFileInput.files?.[0];
+      startLocalVideo(file);
+    });
+    poseVideo.addEventListener("ended", () => {
+      if (poseSourceMode === "local-video") {
+        stopPoseCapture("Uploaded video analysis complete.");
+      }
+    });
     poseStopBtn.addEventListener("click", () => {
-      stopCamera();
+      stopPoseCapture("Pose capture stopped.");
     });
     poseAnalyzeBtn.addEventListener("click", async () => {
       poseAnalyzeBtn.disabled = true;
@@ -1857,7 +1975,7 @@ Strict rules:
       beginEmgWarmup();
     });
     window.addEventListener("beforeunload", () => {
-      stopCamera();
+      stopPoseCapture();
     });
     initPoseModel();
     beginEmgWarmup();
