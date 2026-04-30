@@ -72,10 +72,11 @@
     }
 
     .hero-grid {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(160px, 1fr));
       gap: 14px;
       margin-top: 10px;
-      flex-wrap: wrap;
+      max-width: 620px;
     }
 
     .hero-item {
@@ -95,6 +96,11 @@
     .hero-item span {
       color: #94a3b8;
       font-size: 13px;
+    }
+
+    .hero-item.emg-center {
+      grid-column: 2;
+      text-align: center;
     }
 
     .form-wrap {
@@ -228,6 +234,27 @@
       .form-wrap {
         padding: 14px 20px 28px;
       }
+
+      .hero-grid {
+        grid-template-columns: repeat(2, minmax(160px, 1fr));
+      }
+
+      .hero-item.emg-center {
+        grid-column: 1 / -1;
+        justify-self: center;
+        width: min(100%, 220px);
+      }
+    }
+
+    @media (max-width: 560px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-item.emg-center {
+        grid-column: auto;
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -236,10 +263,9 @@
     <div class="panel">
       <section class="hero">
         <div class="badge">Workspace Entry</div>
-        <h1>Simple Access Portal</h1>
+        <h1>VIT SMART</h1>
         <p>
-          A minimal front-end and back-end demo with user registration, user login,
-          and a redirect to the main page after a successful sign in.
+          VIT SMART is a student-level prototype for EMG-based muscle fatigue monitoring.
         </p>
 
         <div class="hero-grid">
@@ -248,12 +274,18 @@
             <span>Create a user record in SQLite</span>
           </div>
           <div class="hero-item">
-            <strong>Login</strong>
-            <span>Check email and password</span>
+            <strong>Qwen Assistant</strong>
+            <span>Qwen's solutions to problems that arose during training</span>
           </div>
+
           <div class="hero-item">
-            <strong>Redirect</strong>
-            <span>Open the main dashboard page</span>
+            <strong>Pose Tracking</strong>
+            <span>Check whether the movement is performed correctly</span>
+          </div>
+
+          <div class="hero-item emg-center">
+            <strong>EMG Muscle Fatigue</strong>
+            <span>Determine whether the muscles are fatigued</span>
           </div>
         </div>
       </section>

@@ -520,104 +520,813 @@
       50% { transform: scale(1.02); }
       100% { transform: scale(1); }
     }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: #eef3f9;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      background: linear-gradient(135deg, rgba(239, 246, 255, 0.94), rgba(248, 250, 252, 0.98) 48%, rgba(226, 232, 240, 0.9));
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 18px;
+      background: #0f172a;
+      color: #ffffff;
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 12px 0 32px rgba(15, 23, 42, 0.16);
+    }
+
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 6px 24px;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #2563eb, #0ea5e9);
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0;
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.28);
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .brand-subtitle {
+      margin-top: 2px;
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    .side-nav {
+      display: grid;
+      gap: 8px;
+    }
+
+    .nav-item {
+      width: 100%;
+      min-height: 46px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 12px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      color: #cbd5e1;
+      cursor: pointer;
+      font-weight: 700;
+      text-align: left;
+      transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    }
+
+    .nav-item:hover,
+    .nav-item.active {
+      border-color: rgba(96, 165, 250, 0.32);
+      background: rgba(37, 99, 235, 0.18);
+      color: #ffffff;
+    }
+
+    .nav-code {
+      display: grid;
+      place-items: center;
+      flex: 0 0 28px;
+      height: 28px;
+      border-radius: 7px;
+      background: rgba(148, 163, 184, 0.14);
+      color: #bfdbfe;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .nav-item.active .nav-code {
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 14px 12px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.72);
+      color: #cbd5e1;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .sidebar-footer strong {
+      display: block;
+      color: #ffffff;
+      font-size: 13px;
+    }
+
+    .workspace {
+      min-width: 0;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      min-height: 82px;
+      height: auto;
+      padding: 16px 32px;
+      background: rgba(255, 255, 255, 0.88);
+      color: #0f172a;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+      backdrop-filter: blur(14px);
+    }
+
+    .topbar-title {
+      min-width: 0;
+    }
+
+    .topbar-kicker {
+      margin-bottom: 4px;
+      color: #2563eb;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .topbar h1 {
+      color: #0f172a;
+      font-size: 24px;
+      line-height: 1.2;
+    }
+
+    .user-tag {
+      display: inline-flex;
+      align-items: center;
+      max-width: 360px;
+      min-height: 36px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .logout-btn {
+      border-radius: 8px;
+      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.18);
+    }
+
+    .container {
+      max-width: none;
+      width: 100%;
+      padding: 28px 32px 44px;
+    }
+
+    .module-view {
+      display: none;
+    }
+
+    .module-view.active {
+      display: block;
+      animation: viewIn 0.18s ease-out;
+    }
+
+    @keyframes viewIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .overview-hero {
+      min-height: 220px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 260px;
+      gap: 24px;
+      align-items: end;
+      padding: 28px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 8px;
+      background: linear-gradient(135deg, #0f172a, #172554 54%, #0f766e);
+      color: #ffffff;
+      box-shadow: 0 18px 48px rgba(15, 23, 42, 0.18);
+    }
+
+    .overview-hero h2 {
+      margin-top: 8px;
+      font-size: clamp(32px, 6vw, 58px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .overview-hero p {
+      max-width: 620px;
+      margin-top: 14px;
+      color: #dbeafe;
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: rgba(219, 234, 254, 0.12);
+      color: #bfdbfe;
+      border: 1px solid rgba(191, 219, 254, 0.18);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .overview-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .metric {
+      padding: 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .metric span {
+      display: block;
+      color: #bfdbfe;
+      font-size: 12px;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(170px, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .module-card {
+      min-height: 170px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: space-between;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 8px;
+      background: #ffffff;
+      color: #0f172a;
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+      cursor: pointer;
+      text-align: left;
+      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .module-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(37, 99, 235, 0.42);
+      box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
+    }
+
+    .module-number {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background: #eff6ff;
+      color: #2563eb;
+      font-weight: 900;
+      font-size: 13px;
+    }
+
+    .module-card h3 {
+      margin-top: 18px;
+      font-size: 18px;
+      line-height: 1.2;
+    }
+
+    .module-card p {
+      margin-top: 8px;
+      color: #64748b;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .module-link {
+      margin-top: 18px;
+      color: #2563eb;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .view-heading {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .view-heading h2 {
+      font-size: 26px;
+      color: #0f172a;
+    }
+
+    .view-heading p {
+      margin-top: 6px;
+      color: #64748b;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .back-btn {
+      min-height: 40px;
+      padding: 0 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #334155;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .ai-card,
+    .pose-card,
+    .serial-card,
+    .emg-card {
+      margin: 0;
+      border-radius: 8px;
+      box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+    }
+
+    .ai-card,
+    .emg-card,
+    .pose-card,
+    .serial-card {
+      min-height: 520px;
+    }
+
+    .ai-card {
+      display: grid;
+      grid-template-rows: auto minmax(260px, 1fr) auto;
+      gap: 14px;
+    }
+
+    .chat-log {
+      max-height: none;
+      min-height: 260px;
+    }
+
+    .chat-form textarea {
+      min-height: 96px;
+    }
+
+    .emg-states {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .emg-wave-canvas {
+      height: 260px;
+    }
+
+    .pose-workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.55fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .pose-stage {
+      max-width: none;
+      border-radius: 8px;
+    }
+
+    .risk-panel {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: #f8fafc;
+      padding: 12px;
+    }
+
+    .serial-row {
+      grid-template-columns: minmax(260px, 2fr) minmax(120px, 0.7fr) auto auto;
+    }
+
+    .serial-send textarea {
+      min-height: 116px;
+      resize: vertical;
+    }
+
+    .serial-log {
+      height: 320px;
+      border-radius: 8px;
+    }
+
+    @media (max-width: 1180px) {
+      .module-grid {
+        grid-template-columns: repeat(2, minmax(220px, 1fr));
+      }
+
+      .overview-hero {
+        grid-template-columns: 1fr;
+      }
+
+      .overview-metrics {
+        max-width: 360px;
+      }
+
+      .pose-workspace {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 920px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        height: auto;
+        padding: 16px;
+      }
+
+      .sidebar-brand {
+        padding-bottom: 14px;
+      }
+
+      .side-nav {
+        grid-template-columns: repeat(5, minmax(120px, 1fr));
+        overflow-x: auto;
+        padding-bottom: 2px;
+      }
+
+      .sidebar-footer {
+        display: none;
+      }
+
+      .topbar {
+        top: 0;
+        padding: 14px 18px;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .topbar-right {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .container {
+        padding: 18px 16px 28px;
+      }
+
+      .user-tag {
+        max-width: 240px;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .topbar {
+        flex-direction: column;
+      }
+
+      .topbar-right {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .overview-hero {
+        padding: 22px;
+      }
+
+      .overview-metrics,
+      .module-grid,
+      .emg-states {
+        grid-template-columns: 1fr;
+      }
+
+      .module-card {
+        min-height: 150px;
+      }
+
+      .view-heading {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .serial-row,
+      .serial-send {
+        grid-template-columns: 1fr;
+      }
+
+      .pose-controls,
+      .chat-actions,
+      .emg-controls {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .pose-btn,
+      .chat-btn,
+      .emg-reset-btn,
+      .back-btn,
+      .logout-btn {
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">Workspace Portal</div>
-    <div class="topbar-right">
-      <div class="user-tag" id="userEmail">Signed in user</div>
-      <button class="logout-btn" id="logoutBtn">Sign Out</button>
-    </div>
-  </header>
-
-  <main class="container">
-    <section class="ai-card">
-      <div class="ai-head">
-        <h3>Qwen Assistant</h3>
-      </div>
-
-      <div class="chat-log" id="chatLog">
-        <div class="msg bot">Qwen ready.</div>
-      </div>
-
-      <form class="chat-form" id="chatForm">
-        <textarea id="chatInput" placeholder="Type your message"></textarea>
-        <div class="chat-actions">
-          <button class="chat-btn" id="sendBtn" type="submit">Send to Qwen</button>
-          <span class="chat-hint" id="chatHint">Model: Not connected</span>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Primary navigation">
+      <div class="sidebar-brand">
+        <div class="brand-mark">VS</div>
+        <div>
+          <div class="brand-title">VIT SMART</div>
+          <div class="brand-subtitle">Training Console</div>
         </div>
-      </form>
-    </section>
-<section class="emg-card">
-      <div class="emg-head">
-        <h3>EMG Muscle Fatigue</h3>
-        <span class="pose-hint">Real-time Sensor Monitoring</span>
-      </div>
-      
-      <div class="emg-states">
-        <div class="emg-state active-normal" id="stateNormal">Normal</div>
-        <div class="emg-state" id="stateHigh">High Load</div>
-        <div class="emg-state" id="stateFatigue">Fatigue Risk</div>
       </div>
 
-      <div class="emg-controls">
-        <button class="emg-reset-btn" id="emgResetBtn" type="button">Reset Detection</button>
-        <span class="emg-detect-hint" id="emgDetectHint">Detecting...</span>
-      </div>
+      <nav class="side-nav">
+        <button class="nav-item active" data-target="overview" type="button">
+          <span class="nav-code">00</span>
+          <span>Overview</span>
+        </button>
+        <button class="nav-item" data-target="assistant" type="button">
+          <span class="nav-code">01</span>
+          <span>Qwen Assistant</span>
+        </button>
+        <button class="nav-item" data-target="emg" type="button">
+          <span class="nav-code">02</span>
+          <span>EMG Monitor</span>
+        </button>
+        <button class="nav-item" data-target="pose" type="button">
+          <span class="nav-code">03</span>
+          <span>Pose Tracking</span>
+        </button>
+        <button class="nav-item" data-target="serial" type="button">
+          <span class="nav-code">04</span>
+          <span>Serial CH340</span>
+        </button>
+      </nav>
 
-      <div class="emg-wave-wrap">
-        <canvas class="emg-wave-canvas" id="emgWaveCanvas"></canvas>
-        <div class="emg-wave-meta" id="emgWaveMeta">CH1 waveform: waiting for data...</div>
+      <div class="sidebar-footer">
+        <strong>Workspace status</strong>
+        Modules separated for focused operation.
       </div>
-      
-      <div class="alert-bar" id="emgAlertBar">Awaiting serial data...</div>
-    </section>
-    <section class="pose-card">
-      <div class="pose-head">
-        <h3>Pose Tracking</h3>
-        <span class="pose-hint">Browser-side MediaPipe</span>
-      </div>
+    </aside>
 
-      <div class="pose-controls">
-        <button class="pose-btn" id="poseStartBtn" type="button">Start Camera</button>
-        <button class="pose-btn tertiary" id="poseUploadBtn" type="button">Upload Video</button>
-        <input class="pose-file-input" id="poseVideoFileInput" type="file" accept="video/*" />
-        <button class="pose-btn secondary" id="poseStopBtn" type="button">Stop</button>
-        <button class="pose-btn tertiary" id="poseAnalyzeBtn" type="button">Analyze Latest Session</button>
-      </div>
+    <div class="workspace">
+      <header class="topbar">
+        <div class="topbar-title">
+          <div class="topbar-kicker">Control Center</div>
+          <h1 id="pageTitle">Overview</h1>
+        </div>
+        <div class="topbar-right">
+          <div class="user-tag" id="userEmail">Signed in user</div>
+          <button class="logout-btn" id="logoutBtn">Sign Out</button>
+        </div>
+      </header>
 
-      <div class="pose-stage">
-        <video class="pose-video" id="poseVideo" playsinline muted></video>
-        <canvas class="pose-canvas" id="poseCanvas"></canvas>
-      </div>
-      <div class="pose-status" id="poseStatus">Pose model loading...</div>
-      <div class="alert-bar" id="riskAlertBar">No active risk.</div>
-      <div class="risk-list" id="riskList">
-        <div class="risk-item">No risk events yet.</div>
-      </div>
-    </section>
+      <main class="container">
+        <section class="module-view active" id="overviewView" data-title="Overview">
+          <div class="overview-hero">
+            <div>
+              <span class="eyebrow">Workspace Entry</span>
+              <h2>VIT SMART</h2>
+              <p>EMG-based muscle fatigue monitoring with assistant, pose tracking, local video analysis, and serial device panels.</p>
+            </div>
+            <div class="overview-metrics" aria-label="Workspace metrics">
+              <div class="metric">
+                <span>Modules</span>
+                <strong>4</strong>
+              </div>
+              <div class="metric">
+                <span>Console</span>
+                <strong>Live</strong>
+              </div>
+            </div>
+          </div>
 
-    <section class="serial-card">
-      <div class="serial-head">
-        <h3>Serial (CH340)</h3>
-        <span class="serial-status" id="serialStatus">Disconnected</span>
-      </div>
+          <div class="module-grid">
+            <button class="module-card" data-target="assistant" type="button">
+              <span class="module-number">01</span>
+              <div class="module-copy">
+                <h3>Qwen Assistant</h3>
+                <p>Training advice with live EMG and pose context.</p>
+              </div>
+              <span class="module-link">Enter module</span>
+            </button>
+            <button class="module-card" data-target="emg" type="button">
+              <span class="module-number">02</span>
+              <div class="module-copy">
+                <h3>EMG Muscle Fatigue</h3>
+                <p>CH1 waveform, load state, and fatigue risk status.</p>
+              </div>
+              <span class="module-link">Enter module</span>
+            </button>
+            <button class="module-card" data-target="pose" type="button">
+              <span class="module-number">03</span>
+              <div class="module-copy">
+                <h3>Pose Tracking</h3>
+                <p>Camera or local-video posture risks and session analysis.</p>
+              </div>
+              <span class="module-link">Enter module</span>
+            </button>
+            <button class="module-card" data-target="serial" type="button">
+              <span class="module-number">04</span>
+              <div class="module-copy">
+                <h3>Serial CH340</h3>
+                <p>Port connection, command sending, and device logs.</p>
+              </div>
+              <span class="module-link">Enter module</span>
+            </button>
+          </div>
+        </section>
 
-      <div class="serial-row">
-        <select id="serialPortSelect"></select>
-        <input id="serialBaudInput" type="number" value="115200" min="300" step="1" />
-        <button class="pose-btn secondary" id="serialRefreshBtn" type="button">Refresh</button>
-        <button class="pose-btn" id="serialConnectBtn" type="button">Connect</button>
-      </div>
+        <section class="module-view" id="assistantView" data-title="Qwen Assistant">
+          <div class="view-heading">
+            <div>
+              <h2>Qwen Assistant</h2>
+              <p>Coach-style response panel connected to current training context.</p>
+            </div>
+            <button class="back-btn" data-target="overview" type="button">Back to Overview</button>
+          </div>
 
-      <div class="serial-send">
-        <textarea id="serialSendInput" placeholder="AT&#10;STATUS"></textarea>        <button class="pose-btn tertiary" id="serialSendBtn" type="button">Send</button>
-      </div>
+          <section class="ai-card">
+            <div class="ai-head">
+              <h3>Assistant Session</h3>
+              <span class="chat-hint">Live context enabled</span>
+            </div>
 
-      <div class="serial-log" id="serialLog">No serial log yet.</div>
-    </section>
-  </main>
+            <div class="chat-log" id="chatLog">
+              <div class="msg bot">Qwen ready.</div>
+            </div>
+
+            <form class="chat-form" id="chatForm">
+              <textarea id="chatInput" placeholder="Type your message"></textarea>
+              <div class="chat-actions">
+                <button class="chat-btn" id="sendBtn" type="submit">Send to Qwen</button>
+                <span class="chat-hint" id="chatHint">Model: Not connected</span>
+              </div>
+            </form>
+          </section>
+        </section>
+
+        <section class="module-view" id="emgView" data-title="EMG Muscle Fatigue">
+          <div class="view-heading">
+            <div>
+              <h2>EMG Muscle Fatigue</h2>
+              <p>Real-time CH1 monitoring for training load and fatigue risk.</p>
+            </div>
+            <button class="back-btn" data-target="overview" type="button">Back to Overview</button>
+          </div>
+
+          <section class="emg-card">
+            <div class="emg-head">
+              <h3>Sensor Monitor</h3>
+              <span class="pose-hint">Real-time Sensor Monitoring</span>
+            </div>
+
+            <div class="emg-states">
+              <div class="emg-state active-normal" id="stateNormal">Normal</div>
+              <div class="emg-state" id="stateHigh">High Load</div>
+              <div class="emg-state" id="stateFatigue">Fatigue Risk</div>
+            </div>
+
+            <div class="emg-controls">
+              <button class="emg-reset-btn" id="emgResetBtn" type="button">Reset Detection</button>
+              <span class="emg-detect-hint" id="emgDetectHint">Detecting...</span>
+            </div>
+
+            <div class="emg-wave-wrap">
+              <canvas class="emg-wave-canvas" id="emgWaveCanvas"></canvas>
+              <div class="emg-wave-meta" id="emgWaveMeta">CH1 waveform: waiting for data...</div>
+            </div>
+
+            <div class="alert-bar" id="emgAlertBar">Awaiting serial data...</div>
+          </section>
+        </section>
+
+        <section class="module-view" id="poseView" data-title="Pose Tracking">
+          <div class="view-heading">
+            <div>
+              <h2>Pose Tracking</h2>
+              <p>Camera and local-video posture tracking with session risk records.</p>
+            </div>
+            <button class="back-btn" data-target="overview" type="button">Back to Overview</button>
+          </div>
+
+          <section class="pose-card">
+            <div class="pose-head">
+              <h3>Movement Session</h3>
+              <span class="pose-hint">Browser-side MediaPipe</span>
+            </div>
+
+            <div class="pose-controls">
+              <button class="pose-btn" id="poseStartBtn" type="button">Start Camera</button>
+              <button class="pose-btn tertiary" id="poseUploadBtn" type="button">Upload Video</button>
+              <input class="pose-file-input" id="poseVideoFileInput" type="file" accept="video/*" />
+              <button class="pose-btn secondary" id="poseStopBtn" type="button">Stop</button>
+              <button class="pose-btn tertiary" id="poseAnalyzeBtn" type="button">Analyze Latest Session</button>
+            </div>
+
+            <div class="pose-workspace">
+              <div>
+                <div class="pose-stage">
+                  <video class="pose-video" id="poseVideo" playsinline muted></video>
+                  <canvas class="pose-canvas" id="poseCanvas"></canvas>
+                </div>
+                <div class="pose-status" id="poseStatus">Pose model loading...</div>
+              </div>
+              <div class="risk-panel">
+                <div class="alert-bar" id="riskAlertBar">No active risk.</div>
+                <div class="risk-list" id="riskList">
+                  <div class="risk-item">No risk events yet.</div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <section class="module-view" id="serialView" data-title="Serial CH340">
+          <div class="view-heading">
+            <div>
+              <h2>Serial CH340</h2>
+              <p>Device connection, command sending, and serial logs.</p>
+            </div>
+            <button class="back-btn" data-target="overview" type="button">Back to Overview</button>
+          </div>
+
+          <section class="serial-card">
+            <div class="serial-head">
+              <h3>Port Console</h3>
+              <span class="serial-status" id="serialStatus">Disconnected</span>
+            </div>
+
+            <div class="serial-row">
+              <select id="serialPortSelect"></select>
+              <input id="serialBaudInput" type="number" value="115200" min="300" step="1" />
+              <button class="pose-btn secondary" id="serialRefreshBtn" type="button">Refresh</button>
+              <button class="pose-btn" id="serialConnectBtn" type="button">Connect</button>
+            </div>
+
+            <div class="serial-send">
+              <textarea id="serialSendInput" placeholder="AT&#10;STATUS"></textarea>
+              <button class="pose-btn tertiary" id="serialSendBtn" type="button">Send</button>
+            </div>
+
+            <div class="serial-log" id="serialLog">No serial log yet.</div>
+          </section>
+        </section>
+      </main>
+    </div>
+  </div>
 
   <script type="module">
     import {
@@ -719,6 +1428,48 @@
     let emgLastMeasuredValue = null;
     let emgStateLocked = false;
     let emgLockedValue = null;
+    const pageTitle = document.getElementById("pageTitle");
+    const moduleViews = document.querySelectorAll(".module-view");
+    const moduleTriggers = document.querySelectorAll("[data-target]");
+    const navItems = document.querySelectorAll(".nav-item");
+
+    function getModuleFromHash() {
+      return window.location.hash.replace("#", "") || "overview";
+    }
+
+    function activateModule(target, updateHash = true) {
+      const nextTarget = target || "overview";
+      const nextView = document.getElementById(`${nextTarget}View`) || document.getElementById("overviewView");
+      const activeTarget = nextView.id.replace("View", "");
+
+      moduleViews.forEach((view) => {
+        view.classList.toggle("active", view === nextView);
+      });
+
+      navItems.forEach((item) => {
+        item.classList.toggle("active", item.dataset.target === activeTarget);
+      });
+
+      pageTitle.textContent = nextView.dataset.title || "Overview";
+
+      if (updateHash && window.location.hash !== `#${activeTarget}`) {
+        window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${activeTarget}`);
+      }
+
+      if (activeTarget === "emg") {
+        window.requestAnimationFrame(renderEmgWaveform);
+      }
+    }
+
+    moduleTriggers.forEach((trigger) => {
+      trigger.addEventListener("click", () => {
+        activateModule(trigger.dataset.target);
+      });
+    });
+
+    window.addEventListener("hashchange", () => {
+      activateModule(getModuleFromHash(), false);
+    });
 
     function appendMessage(role, text) {
       const node = document.createElement("div");
@@ -1997,6 +2748,7 @@ Strict rules:
       }
     });
     renderRiskState();
+    activateModule(getModuleFromHash(), false);
     refreshSerialPorts();
     updateSerialStatus();
     serialPollTimer = window.setInterval(() => {
