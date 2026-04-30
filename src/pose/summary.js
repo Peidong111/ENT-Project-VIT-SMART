@@ -3,7 +3,7 @@ const { RISK_SEVERITY } = require("./contracts");
 function buildSessionSummaryForLlm({ session, aggregate }) {
   const severityMap = {
     [RISK_SEVERITY.INFO]: 0,
-    [RISK_SEVERITY.WARN]: 0,
+    [RISK_SEVERITY.MESSAGE]: 0,
     [RISK_SEVERITY.HIGH]: 0
   };
 
@@ -35,7 +35,7 @@ function buildSessionSummaryForLlm({ session, aggregate }) {
     },
     riskSummary: {
       highCount: severityMap[RISK_SEVERITY.HIGH],
-      warnCount: severityMap[RISK_SEVERITY.WARN],
+      messageCount: severityMap[RISK_SEVERITY.MESSAGE],
       infoCount: severityMap[RISK_SEVERITY.INFO],
       topRisks: (aggregate.riskDistribution || []).slice(0, 5)
     }

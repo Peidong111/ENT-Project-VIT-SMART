@@ -1,6 +1,6 @@
 const RISK_SEVERITY = {
   INFO: "INFO",
-  WARN: "WARN",
+  MESSAGE: "MESSAGE",
   HIGH: "HIGH"
 };
 

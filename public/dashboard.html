@@ -307,7 +307,7 @@
       color: #334155;
     }
 
-    .risk-level.warn {
+    .risk-level.message {
       background: #fef3c7;
       color: #92400e;
     }
@@ -692,17 +692,6 @@
     const POSE_VISIBILITY_THRESHOLD = 0.35;
     const POSE_ASYMMETRY_THRESHOLD_DEG = 50;
     const POSE_ABRUPT_CHANGE_THRESHOLD_DEG = 65;
-    const POSE_HIGH_SEVERITY_MARGIN_DEG = 18;
-    const POSE_JOINT_RULES = [
-      { key: "leftElbowAngle", min: 8, max: 180 },
-      { key: "rightElbowAngle", min: 8, max: 180 },
-      { key: "leftKneeAngle", min: 10, max: 180 },
-      { key: "rightKneeAngle", min: 10, max: 180 },
-      { key: "leftShoulderAngle", min: 5, max: 180 },
-      { key: "rightShoulderAngle", min: 5, max: 180 },
-      { key: "leftHipAngle", min: 8, max: 180 },
-      { key: "rightHipAngle", min: 8, max: 180 }
-    ];
     let previousAngles = null;
     let previousAnglesTsMs = 0;
     let recentRiskEvents = [];
@@ -1051,8 +1040,8 @@ Strict rules:
       if (normalized === "HIGH") {
         return "high";
       }
-      if (normalized === "WARN") {
-        return "warn";
+      if (normalized === "MESSAGE") {
+        return "message";
       }
       return "info";
     }
@@ -1603,32 +1592,6 @@ Strict rules:
         return;
       }
 
-      // Generic joint-angle anomaly detection (action-agnostic).
-      for (const rule of POSE_JOINT_RULES) {
-        const value = angles[rule.key];
-        if (value === null) {
-          continue;
-        }
-        if (value < rule.min || value > rule.max) {
-          emitRiskEvent({
-            tsMs,
-            type: "ANOMALOUS_JOINT_ANGLE",
-            severity: value < rule.min - POSE_HIGH_SEVERITY_MARGIN_DEG ||
-              value > rule.max + POSE_HIGH_SEVERITY_MARGIN_DEG
-              ? "HIGH"
-              : "WARN",
-            confidence: confidence ?? 0.5,
-            metrics: {
-              joint: rule.key,
-              angle: value,
-              expectedMin: rule.min,
-              expectedMax: rule.max
-            },
-            cue: `Adjust ${rule.key} toward a safer range.`
-          });
-        }
-      }
-
       const pairs = [
         ["leftElbowAngle", "rightElbowAngle"],
         ["leftKneeAngle", "rightKneeAngle"],
@@ -1642,7 +1605,7 @@ Strict rules:
           emitRiskEvent({
             tsMs,
             type: "ASYMMETRIC_JOINT_ANGLE",
-            severity: "WARN",
+            severity: "MESSAGE",
             confidence: confidence ?? 0.5,
             metrics: {
               leftJoint: leftKey,
@@ -1668,7 +1631,7 @@ Strict rules:
               emitRiskEvent({
                 tsMs,
                 type: "ABRUPT_ANGLE_CHANGE",
-                severity: "WARN",
+                severity: "MESSAGE",
                 confidence: confidence ?? 0.5,
                 metrics: { joint: key, delta, dtMs: dt, prev: previousAngles[key], current: value },
                 cue: "Control movement speed and keep form stable."

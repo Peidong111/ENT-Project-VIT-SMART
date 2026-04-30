@@ -207,7 +207,7 @@ test("pose data pipeline scaffold endpoints work for a basic session", async (t)
       {
         tsMs: 150,
         type: "KNEE_VALGUS",
-        severity: "WARN",
+        severity: "MESSAGE",
         confidence: 0.77,
         metrics: { leftKneeAngle: 21 },
         cue: "Keep knee aligned with toe."

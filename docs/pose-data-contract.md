@@ -60,7 +60,7 @@
     {
       "tsMs": 180,
       "type": "KNEE_VALGUS",
-      "severity": "WARN",
+      "severity": "MESSAGE",
       "confidence": 0.78,
       "metrics": { "leftKneeToToeOffset": 0.13 },
       "cue": "Keep knee aligned with toe."

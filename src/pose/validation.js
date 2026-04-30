@@ -137,7 +137,7 @@ function validateRiskEvents(payload) {
     const item = isObject(event) ? event : {};
     const tsMs = Number(item.tsMs);
     const type = String(item.type || "").trim();
-    const severity = String(item.severity || RISK_SEVERITY.WARN).trim().toUpperCase();
+    const severity = String(item.severity || RISK_SEVERITY.MESSAGE).trim().toUpperCase();
 
     if (!Number.isFinite(tsMs) || tsMs < 0) {
       return { ok: false, status: 400, message: "event tsMs must be a non-negative number." };
