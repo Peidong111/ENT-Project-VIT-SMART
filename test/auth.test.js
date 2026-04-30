@@ -5,6 +5,7 @@ const os = require("node:os");
 const path = require("node:path");
 const Database = require("better-sqlite3");
 const { startServer, isBcryptHash } = require("../server");
+const { SerialService } = require("../src/serial/service");
 
 function postJson(baseUrl, route, body) {
   return fetch(`${baseUrl}${route}`, {
@@ -354,4 +355,20 @@ test("serial endpoints work with injected mock service", async (t) => {
 
   const disconnectRes = await postJson(base, "/api/serial/disconnect", {});
   assert.equal(disconnectRes.status, 200);
+});
+
+test("serial service emits CR-delimited and partial samples", () => {
+  const service = new SerialService();
+
+  service.handleData(Buffer.from("123,456\r789,012\r"));
+  assert.equal(service.logs.length, 2);
+  assert.equal(service.logs[0].text, "123,456");
+  assert.equal(service.logs[1].text, "789,012");
+
+  service.handleData(Buffer.from("345,678"));
+  assert.equal(service.logs.length, 2);
+
+  service.flushBufferedData();
+  assert.equal(service.logs.length, 3);
+  assert.equal(service.logs[2].text, "345,678");
 });

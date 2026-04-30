@@ -3,12 +3,15 @@ const { SerialPort } = require("serialport");
 
 const DEFAULT_BAUD_RATE = 115200;
 const MAX_LOG_ENTRIES = 1000;
+const PARTIAL_FLUSH_MS = 120;
+const MAX_BUFFERED_CHARS = 4096;
 
 class SerialService extends EventEmitter {
   constructor() {
     super();
     this.port = null;
     this.readBuffer = "";
+    this.partialFlushTimer = null;
     this.logs = [];
     this.logSeq = 0;
   }
@@ -99,6 +102,7 @@ class SerialService extends EventEmitter {
 
     const port = this.port;
     this.port = null;
+    this.clearPartialFlushTimer();
 
     if (!port.isOpen) {
       return this.getStatus();
@@ -143,20 +147,64 @@ class SerialService extends EventEmitter {
     const text = chunk.toString("utf8");
     this.readBuffer += text;
 
-    let index = this.readBuffer.indexOf("\n");
+    let index = findLineBreakIndex(this.readBuffer);
     while (index !== -1) {
+      const delimiter = this.readBuffer[index];
       const rawLine = this.readBuffer.slice(0, index);
-      const line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
+      const line = rawLine.trim();
       if (line.length > 0) {
         this.pushLog("in", line);
       }
-      this.readBuffer = this.readBuffer.slice(index + 1);
-      index = this.readBuffer.indexOf("\n");
+
+      let nextStart = index + 1;
+      if (
+        (delimiter === "\r" && this.readBuffer[nextStart] === "\n") ||
+        (delimiter === "\n" && this.readBuffer[nextStart] === "\r")
+      ) {
+        nextStart += 1;
+      }
+      this.readBuffer = this.readBuffer.slice(nextStart);
+      index = findLineBreakIndex(this.readBuffer);
     }
 
-    if (this.readBuffer.length > 4096) {
-      this.pushLog("in", this.readBuffer.slice(0, 4096));
+    if (this.readBuffer.length > MAX_BUFFERED_CHARS) {
+      this.pushLog("in", this.readBuffer.slice(0, MAX_BUFFERED_CHARS));
       this.readBuffer = "";
+      this.clearPartialFlushTimer();
+      return;
+    }
+
+    this.schedulePartialFlush();
+  }
+
+  schedulePartialFlush() {
+    if (!this.readBuffer.trim()) {
+      this.clearPartialFlushTimer();
+      return;
+    }
+
+    this.clearPartialFlushTimer();
+    this.partialFlushTimer = setTimeout(() => {
+      this.flushBufferedData();
+    }, PARTIAL_FLUSH_MS);
+    if (typeof this.partialFlushTimer.unref === "function") {
+      this.partialFlushTimer.unref();
+    }
+  }
+
+  flushBufferedData() {
+    this.clearPartialFlushTimer();
+    const line = this.readBuffer.trim();
+    this.readBuffer = "";
+    if (line.length > 0) {
+      this.pushLog("in", line);
+    }
+  }
+
+  clearPartialFlushTimer() {
+    if (this.partialFlushTimer) {
+      clearTimeout(this.partialFlushTimer);
+      this.partialFlushTimer = null;
     }
   }
 
@@ -176,6 +224,19 @@ class SerialService extends EventEmitter {
 
     this.emit("log", entry);
   }
+}
+
+function findLineBreakIndex(text) {
+  const crIndex = text.indexOf("\r");
+  const lfIndex = text.indexOf("\n");
+
+  if (crIndex === -1) {
+    return lfIndex;
+  }
+  if (lfIndex === -1) {
+    return crIndex;
+  }
+  return Math.min(crIndex, lfIndex);
 }
 
 function normalizeDataBits(value) {
