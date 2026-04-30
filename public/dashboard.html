@@ -220,12 +220,12 @@
     .pose-stage {
       position: relative;
       width: 100%;
-      max-width: 780px;
+      max-width: var(--pose-stage-max-width, 780px);
       border-radius: 14px;
       overflow: hidden;
       border: 1px solid #e2e8f0;
       background: #0f172a;
-      aspect-ratio: 16 / 9;
+      aspect-ratio: var(--pose-stage-ratio, 16 / 9);
     }
 
     .pose-video,
@@ -235,6 +235,11 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+
+    .pose-stage.local-video .pose-video,
+    .pose-stage.local-video .pose-canvas {
+      object-fit: contain;
     }
 
     .pose-status {
@@ -640,6 +645,7 @@
     const poseVideoFileInput = document.getElementById("poseVideoFileInput");
     const poseStopBtn = document.getElementById("poseStopBtn");
     const poseAnalyzeBtn = document.getElementById("poseAnalyzeBtn");
+    const poseStage = document.querySelector(".pose-stage");
     const poseVideo = document.getElementById("poseVideo");
     const poseCanvas = document.getElementById("poseCanvas");
     const poseStatus = document.getElementById("poseStatus");
@@ -1409,6 +1415,17 @@ Strict rules:
       }
     }
 
+    function setPoseStageLayout(mode, width = 16, height = 9) {
+      const safeWidth = Number.isFinite(width) && width > 0 ? width : 16;
+      const safeHeight = Number.isFinite(height) && height > 0 ? height : 9;
+      const ratio = safeWidth / safeHeight;
+      const maxWidth = ratio < 0.8 ? 460 : ratio < 1.2 ? 620 : 780;
+
+      poseStage.style.setProperty("--pose-stage-ratio", `${safeWidth} / ${safeHeight}`);
+      poseStage.style.setProperty("--pose-stage-max-width", `${maxWidth}px`);
+      poseStage.classList.toggle("local-video", mode === "local-video");
+    }
+
     async function flushPoseBuffers(force = false) {
       if (!poseSessionId) {
         return;
@@ -1668,6 +1685,7 @@ Strict rules:
       const wasRunning = poseRunning;
       poseRunning = false;
       poseSourceMode = "idle";
+      setPoseStageLayout("camera", 16, 9);
       if (reportTimer) {
         clearInterval(reportTimer);
         reportTimer = null;
@@ -1723,6 +1741,7 @@ Strict rules:
 
         resetPoseRuntimeState();
         poseSourceMode = "camera";
+        setPoseStageLayout("camera", 16, 9);
 
         try {
           poseSessionId = await createPoseSessionOnServer({
@@ -1768,6 +1787,25 @@ Strict rules:
         poseVideo.src = localVideoObjectUrl;
         poseVideo.muted = true;
         poseVideo.loop = false;
+        await new Promise((resolve, reject) => {
+          const onReady = () => {
+            poseVideo.removeEventListener("loadedmetadata", onReady);
+            poseVideo.removeEventListener("error", onError);
+            resolve();
+          };
+          const onError = () => {
+            poseVideo.removeEventListener("loadedmetadata", onReady);
+            poseVideo.removeEventListener("error", onError);
+            reject(new Error("video metadata unavailable"));
+          };
+          if (poseVideo.readyState >= 1) {
+            resolve();
+            return;
+          }
+          poseVideo.addEventListener("loadedmetadata", onReady, { once: true });
+          poseVideo.addEventListener("error", onError, { once: true });
+        });
+        setPoseStageLayout("local-video", poseVideo.videoWidth, poseVideo.videoHeight);
         await poseVideo.play();
 
         resetPoseRuntimeState();
