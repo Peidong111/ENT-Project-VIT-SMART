@@ -683,6 +683,20 @@
     const ACTION_BATCH_SIZE = 30;
     const EVENT_BATCH_SIZE = 10;
     const EVENT_COOLDOWN_MS = 2000;
+    const POSE_VISIBILITY_THRESHOLD = 0.35;
+    const POSE_ASYMMETRY_THRESHOLD_DEG = 50;
+    const POSE_ABRUPT_CHANGE_THRESHOLD_DEG = 65;
+    const POSE_HIGH_SEVERITY_MARGIN_DEG = 18;
+    const POSE_JOINT_RULES = [
+      { key: "leftElbowAngle", min: 8, max: 180 },
+      { key: "rightElbowAngle", min: 8, max: 180 },
+      { key: "leftKneeAngle", min: 10, max: 180 },
+      { key: "rightKneeAngle", min: 10, max: 180 },
+      { key: "leftShoulderAngle", min: 5, max: 180 },
+      { key: "rightShoulderAngle", min: 5, max: 180 },
+      { key: "leftHipAngle", min: 8, max: 180 },
+      { key: "rightHipAngle", min: 8, max: 180 }
+    ];
     let previousAngles = null;
     let previousAnglesTsMs = 0;
     let recentRiskEvents = [];
@@ -1540,10 +1554,10 @@ Strict rules:
         rightKnee,
         leftAnkle,
         rightAnkle
-      ].every((point) => isLandmarkUsable(point, 0.45));
+      ].every((point) => isLandmarkUsable(point, POSE_VISIBILITY_THRESHOLD));
       metrics.fullBodyVisible = fullBodyVisible;
 
-      if (confidence !== null && confidence < 0.45) {
+      if (confidence !== null && confidence < POSE_VISIBILITY_THRESHOLD) {
         markTrackingStatus("LOW_CONFIDENCE", tsMs, confidence, metrics);
         emitRiskEvent({
           tsMs,
@@ -1573,18 +1587,7 @@ Strict rules:
       }
 
       // Generic joint-angle anomaly detection (action-agnostic).
-      const JOINT_RULES = [
-        { key: "leftElbowAngle", min: 15, max: 178 },
-        { key: "rightElbowAngle", min: 15, max: 178 },
-        { key: "leftKneeAngle", min: 20, max: 178 },
-        { key: "rightKneeAngle", min: 20, max: 178 },
-        { key: "leftShoulderAngle", min: 10, max: 178 },
-        { key: "rightShoulderAngle", min: 10, max: 178 },
-        { key: "leftHipAngle", min: 15, max: 178 },
-        { key: "rightHipAngle", min: 15, max: 178 }
-      ];
-
-      for (const rule of JOINT_RULES) {
+      for (const rule of POSE_JOINT_RULES) {
         const value = angles[rule.key];
         if (value === null) {
           continue;
@@ -1593,7 +1596,10 @@ Strict rules:
           emitRiskEvent({
             tsMs,
             type: "ANOMALOUS_JOINT_ANGLE",
-            severity: value < rule.min - 10 || value > rule.max + 10 ? "HIGH" : "WARN",
+            severity: value < rule.min - POSE_HIGH_SEVERITY_MARGIN_DEG ||
+              value > rule.max + POSE_HIGH_SEVERITY_MARGIN_DEG
+              ? "HIGH"
+              : "WARN",
             confidence: confidence ?? 0.5,
             metrics: {
               joint: rule.key,
@@ -1615,7 +1621,7 @@ Strict rules:
       for (const [leftKey, rightKey] of pairs) {
         const left = angles[leftKey];
         const right = angles[rightKey];
-        if (left !== null && right !== null && Math.abs(left - right) > 35) {
+        if (left !== null && right !== null && Math.abs(left - right) > POSE_ASYMMETRY_THRESHOLD_DEG) {
           emitRiskEvent({
             tsMs,
             type: "ASYMMETRIC_JOINT_ANGLE",
@@ -1641,7 +1647,7 @@ Strict rules:
               continue;
             }
             const delta = Math.abs(value - previousAngles[key]);
-            if (delta > 45) {
+            if (delta > POSE_ABRUPT_CHANGE_THRESHOLD_DEG) {
               emitRiskEvent({
                 tsMs,
                 type: "ABRUPT_ANGLE_CHANGE",
