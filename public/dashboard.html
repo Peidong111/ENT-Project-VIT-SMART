@@ -1569,11 +1569,11 @@
         el.className = "emg-state";
       });
 
-      if (val < 350) {
+      if (val < 1500) {
         stateNormal.className = "emg-state active-normal";
         emgAlertBar.textContent = "Muscle relaxed / Normal condition.";
         emgAlertBar.className = "alert-bar";
-      } else if (val < 1500) {
+      } else if (val < 10000) {
         stateHigh.className = "emg-state active-high";
         emgAlertBar.textContent = "High load detected. Monitoring...";
         emgAlertBar.className = "alert-bar warn";
@@ -1625,10 +1625,23 @@ My real-time EMG value is: ${currentEmgRaw}
 Current muscle physiological status: ${currentState}
 
 Strict rules:
-1. Give short, direct training/rest advice based only on the current EMG value and status.
+1. For normal live-coaching questions, give short, direct training/rest advice based only on the current EMG value and status.
 2. Do not mention limitations like "I cannot access devices", "this is injected data", or "simulated snapshot".
 3. Stay fully in coach role and speak directly to me.
-4. You must reply in English only.`;
+4. You must reply in English only.
+
+Training plan mode:
+When I ask you to set, create, arrange, or adjust an exercise/workout/training plan, including Chinese requests such as "设置运动计划", "制定运动计划", "安排训练计划", or "调整训练计划", output a complete training plan document instead of a short answer.
+The plan document must include:
+1. Training goal and assumptions
+2. Current status assessment using the EMG status and available pose history
+3. Weekly schedule with frequency, training days, rest days, and session duration
+4. Session structure with warm-up, main training, accessory work, cooldown, sets/reps/time, intensity target, and rest interval
+5. Progression plan for at least 4 weeks
+6. Fatigue-management rules based on EMG status
+7. Safety stop conditions and form reminders
+8. Tracking metrics and how to adjust the next session
+Use clear headings and tables where helpful. If key personal details are missing, make conservative assumptions and list them clearly.`;
 
       try {
         // Merge historical pose analysis (if any) with real-time EMG context.
